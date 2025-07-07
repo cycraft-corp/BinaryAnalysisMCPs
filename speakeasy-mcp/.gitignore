@@ -1,0 +1,10 @@
+.venv
+__pycache__
+.vscode
+*.exe
+
+
+test.py
+*.egg-info
+*.bin
+*.zip

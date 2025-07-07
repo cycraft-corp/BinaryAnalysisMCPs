@@ -1,0 +1,22 @@
+[project]
+name = "speakeasy-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=2.8.0",
+    "loguru>=0.7.3",
+    "setuptools>=80.9.0",
+    "speakeasy-emulator",
+    "typing-inspection>=0.4.1",
+]
+
+[tool.uv.sources]
+speakeasy-emulator = { git = "https://github.com/mandiant/speakeasy.git" }
+
+[project.scripts]
+speakeasy-mcp = "main:main"  # not src.main:main
+
+[tool.setuptools]
+package-dir = {"" = "src"}

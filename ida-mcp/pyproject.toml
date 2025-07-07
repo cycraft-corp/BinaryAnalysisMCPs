@@ -1,0 +1,20 @@
+[project]
+name = "ida-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp[cli]>=1.4.1",
+    "setuptools>=80.9.0",
+    "typing-inspection>=0.4.1",
+]
+
+[project.scripts]
+ida-mcp = "ida_mcp.main:main"
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]

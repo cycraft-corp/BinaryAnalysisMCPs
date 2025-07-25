@@ -1,5 +1,5 @@
 # IDA MCP
-IDA MCP integrates IDA Pro with the Modular Control Pipeline (MCP), enabling streamlined automation and LLM-assisted workflows.
+IDA MCP integrates IDA Pro with the Model Context Protocol (MCP), enabling streamlined automation and LLM-assisted workflows.
 
 ⚡ **Optimized for small local LLMs** — built for fast, efficient use with lightweight models like Gemma 3 and Qwen 3.
 

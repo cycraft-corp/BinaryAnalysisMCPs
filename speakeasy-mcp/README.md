@@ -1,5 +1,5 @@
 # Speakeasy MCP
-**Speakeasy MCP** (Modular Command-line Processor) is a **server-side emulation service** built on top of [Speakeasy](https://github.com/mandiant/speakeasy).
+**Speakeasy MCP** is a **server-side emulation service** built on top of [Speakeasy](https://github.com/mandiant/speakeasy).
 It provides **rich emulation results via a long-running backend**, designed to **enhance binary analysis workflows** by offering dynamic insights into Windows executables.
 
 ## 🔧 Features

@@ -618,5 +618,5 @@ requires-dist = [
     { name = "fastmcp", specifier = ">=2.3.3" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "pefile", specifier = ">=2024.8.26" },
-    { name = "x64dbg-automate", specifier = ">=0.4.2" },
+    { name = "x64dbg-automate", specifier = "==0.4.2" },
 ]

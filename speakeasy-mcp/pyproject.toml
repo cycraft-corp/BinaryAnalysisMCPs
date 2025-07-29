@@ -16,4 +16,4 @@ dependencies = [
 speakeasy-emulator = { git = "https://github.com/mandiant/speakeasy.git" }
 
 [project.scripts]
-speakeasy-mcp = "speakeasy_mcp:main"  # not src.main:main
+speakeasy-mcp = "speakeasy_mcp.main:main"  # not src.main:main

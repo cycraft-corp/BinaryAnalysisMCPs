@@ -12,4 +12,4 @@ dependencies = [
 ]
 
 [project.scripts]
-x64dbg-mcp = "x64dbg_mcp:main"
+x64dbg-mcp = "x64dbg_mcp.main:main"

@@ -184,11 +184,12 @@ def start_session(
 
     logger.info(f"run {target} {cmdline}")
     dbgClient.start_session(target_exe=target, cmdline=cmdline)
-    if not dbgClient.go():
-        raise Exception(f"can not launch {target} {cmdline}")
     dbgClient.wait_until_debugging(99999) # make sure item is in debuggable state
     dbgClient.clear_breakpoint()
+
+    continue_execution() # magic, i don't know why this worked :P
     return "OK"
+
 
 @mcp.tool()
 def get_running_status() -> str:

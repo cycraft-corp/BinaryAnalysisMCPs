@@ -12,7 +12,7 @@ from pprint import pprint, pformat
 from pathlib import Path
 import os
 
-mcp = FastMCP()
+mcp = FastMCP("x64dbg", host="0.0.0.0")
 dbgClient:X64DbgClient = None
 BITNESS = 64
 

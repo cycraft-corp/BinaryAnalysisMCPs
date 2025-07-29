@@ -12,7 +12,4 @@ dependencies = [
 ]
 
 [project.scripts]
-x64dbg-mcp = "main:main"
-
-[tool.setuptools]
-package-dir = {"" = "src"}
+x64dbg-mcp = "x64dbg_mcp:main"

@@ -8,7 +8,7 @@ import typing_inspection.introspection as intro
 from dataclasses import dataclass
 from speakeasy.windows.winemu import WindowsEmulator
 from speakeasy.windows.win32 import Win32Emulator
-from se_ext import Speakeasy_EXT
+from .se_ext import Speakeasy_EXT
 
 @dataclass
 class EmuFile:

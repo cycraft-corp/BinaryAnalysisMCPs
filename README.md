@@ -1,6 +1,6 @@
-# Binary Analysis MCPs (BAM 💥)
+# Binary Analysis MCPs (BAM💥)
 
-**BAM (Binary Analysis MCPs)** is a modular toolbox designed to automate and accelerate binary analysis across multiple reverse engineering platforms. Each component is built on the MCP (Modular Control Pipeline) framework, offering a unified interface to control different tools like IDA Pro, x64dbg, and Speakeasy.
+**BAM (Binary Analysis MCPs)** is a modular toolbox designed to automate and accelerate binary analysis across multiple reverse engineering platforms. Each component is built on the MCP (Model Context Protocol) framework, offering a unified interface to control different tools like IDA Pro, x64dbg, and Speakeasy.
 
 
 ## ✨ Features

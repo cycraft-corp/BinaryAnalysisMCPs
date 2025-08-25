@@ -8,8 +8,11 @@ dependencies = [
     "fastmcp>=2.3.3",
     "loguru>=0.7.3",
     "pefile>=2024.8.26",
-    "x64dbg-automate==0.4.2",
+    "x64dbg_automate==0.5.0",
 ]
+
+[tool.uv]
+package = true
 
 [project.scripts]
 x64dbg-mcp = "x64dbg_mcp.main:main"

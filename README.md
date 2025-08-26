@@ -26,3 +26,4 @@ We welcome PRs, bug reports, and feature ideas. If you’ve created a new MCP mo
 * [dange0](https://github.com/dange0)
 * [AuTooong](https://github.com/AuTooong)
 * [Ice1187](https://github.com/Ice1187)
+* [mrexodia](https://github.com/mrexodia)

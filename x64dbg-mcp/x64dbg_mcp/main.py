@@ -1,3 +1,4 @@
+import argparse
 from x64dbg_automate import X64DbgClient
 from x64dbg_automate.models import StandardBreakpointType, HardwareBreakpointType, MemoryBreakpointType, RegDump
 from mcp.server.fastmcp import FastMCP
@@ -12,15 +13,17 @@ from pprint import pprint, pformat
 from pathlib import Path
 import os
 
-mcp = FastMCP("x64dbg", host="0.0.0.0")
+mcp = FastMCP("x64dbg")
+x64dbg_exe = ""
+x32dbg_exe = ""
 dbgClient:X64DbgClient = None
 BITNESS = 64
 
 def check_dbg_client_status(func:Callable):
     def wrap(*args, **kwargs):
         logger.info(f"{func.__name__} debuuger status {dbgClient.is_running()} {dbgClient.is_debugging()}")
-        return func(*args, **kwargs)  
-    return wrap  
+        return func(*args, **kwargs)
+    return wrap
 
 class MemoryRegion(TypedDict):
     BaseAddress: Annotated[str, 'Base address of the memory region in hex']
@@ -38,7 +41,7 @@ def resolve_relavtive_call(addr:int)->str:
             resolved_addr = dbgClient.read_qword(addr)
         case _:
             raise ValueError(f"unsupported bitness: {BITNESS}")
-    
+
     sym = dbgClient.get_label_at(resolved_addr)
     if sym == "":
         raise ValueError(f"{hex(addr)} does not contains label")
@@ -53,12 +56,12 @@ def dump_current_state()->str:
     ## 32bit
     gpr_32 = ["eax", "ebx", "ecx", "edx", "ebp", "esp", "esi", "edi", "eip"]
     ## 64bit
-    gpr_64 = ["rax", "rbx", "rcx", "rdx", "rbp", "rsp", "rsi", "rdi", "rip"] 
-    
+    gpr_64 = ["rax", "rbx", "rcx", "rdx", "rbp", "rsp", "rsi", "rdi", "rip"]
+
     def generate_reg_syntax(regname:str, regval:int):
         if regname in gpr_32 + gpr_64:
             symbol = dbgClient.get_label_at(regval)
-            
+
             return hex(regval) + (f" -> {symbol}" if symbol != '' else "")
         else:
             return hex(regval)
@@ -80,15 +83,15 @@ def dump_current_state()->str:
             "gs", "fs", "cs", "ss"
         ]
     }
-    
+
     # asm
     instrs:List[str] = []
-    
+
     ip = dump_dict["context"]["eip" if "eax" in registers else "rip"]
     for i in range(20):
         instr = dbgClient.disassemble_at(ip)
         symbol = dbgClient.get_label_at(ip)
-        
+
         if instr.instruction.startswith("call qword ptr ds:") or instr.instruction.startswith("call dword ptr ds:"): # relative call to data
             ori_instr = instr.instruction
             try:
@@ -98,7 +101,7 @@ def dump_current_state()->str:
                 ori_instr = ori_instr.split("[")[0] + f"[{sym}]"
             except ValueError:
                 ori_instr = instr.instruction
-            
+
             instrs.append(f"{hex(ip)} | {ori_instr}")
         else:
             instrs.append(f"{hex(ip)} | {instr.instruction}")
@@ -109,21 +112,21 @@ def dump_current_state()->str:
 
     stk_btm:int = dump_dict["context"]["esp" if "eax" in registers else "rsp"]
     stk_top:int = dump_dict["context"]["ebp" if "eax" in registers else "rbp"]
-    
+
     ptr_size = 4 if "eax" in registers else 8
     for i in range(min((stk_top - stk_btm) // ptr_size, 20)):
         raw_content = dbgClient.read_memory(
-            stk_btm + i * ptr_size, 
+            stk_btm + i * ptr_size,
             ptr_size
         )
         stk_content = raw_content[::-1].hex()
         symbol = dbgClient.get_label_at(int.from_bytes(raw_content, 'little'))
         stk_view.append(f"{hex(stk_btm + i * ptr_size)} | {stk_content}" + (f" -> {symbol}" if symbol != '' else ""))
-    
+
     return "[registers]\n" + pformat(registers) + \
            "\n\n[assembly]\n"  + pformat(instrs) + \
            "\n\n[stack]\n"     + pformat(stk_view)
-    
+
 
 
 @mcp.tool()
@@ -144,18 +147,17 @@ def start_session(
     is_rundll32 = Path(target) == Path(r"C:\\Windows\\System32\\rundll32.exe")
 
     def create_dbg_client(exe:PE):
-        global dbgClient
-        global BITNESS
+        global dbgClient, BITNESS
         machine_type:int = exe.FILE_HEADER.Machine
         match machine_type: # ref: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#machine-types
             case 0x8664: # IMAGE_FILE_MACHINE_AMD64
-                logger.info("create 64 bit client")
+                logger.info(f"create 64 bit client: {x64dbg_exe}")
                 BITNESS = 64
-                dbgClient = X64DbgClient("C:\\x64dbg\\release\\x64\\x64dbg.exe")
+                dbgClient = X64DbgClient(x64dbg_exe)
             case 0x014c: # IMAGE_FILE_MACHINE_I386
-                logger.info("create 32 bit client")
+                logger.info(f"create 32 bit client: {x32dbg_exe}")
                 BITNESS = 32
-                dbgClient = X64DbgClient("C:\\x64dbg\\release\\x32\\x32dbg.exe")
+                dbgClient = X64DbgClient(x32dbg_exe)
             case _:
                 raise ValueError(f"unsupport machine type {machine_type}")
 
@@ -163,9 +165,9 @@ def start_session(
         exe = PE(cmdline.split(',')[0])
     else:
         exe = PE(target)
-    
+
     create_dbg_client(exe)
-        
+
 
     if exe.OPTIONAL_HEADER.DllCharacteristics & 64 != 0:
         exe.OPTIONAL_HEADER.DllCharacteristics = exe.OPTIONAL_HEADER.DllCharacteristics ^ 64
@@ -185,28 +187,21 @@ def start_session(
     logger.info(f"run {target} {cmdline}")
     dbgClient.start_session(target_exe=target, cmdline=cmdline)
     dbgClient.wait_until_debugging(99999) # make sure item is in debuggable state
+
+    if dbgClient.eval_sync("mod.base(cip) == ntdll.dll:base"):
+        logger.info("paused at system breakpoint, running to entry point")
+        dbgClient.go()
+
     dbgClient.clear_breakpoint()
 
-    continue_execution() # magic, i don't know why this worked :P
     return "OK"
 
 
 @mcp.tool()
 def get_running_status() -> str:
-    debugging = dbgClient.is_debugging()
-    running = dbgClient.is_running()
-    #logger.info(f"debugging: {debugging} running: {running}")
-    
-    return [
-        [
-            "idk",
-            "program terminated"
-        ],
-        [
-            "still executing",
-            "step on breakpoint"
-        ]
-    ][int(debugging)][int(running)]
+    if not dbgClient.is_debugging():
+        return "program terminated"
+    return "still executing" if  dbgClient.is_running() else "paused"
 
 @mcp.tool()
 def continue_execution(
@@ -217,11 +212,11 @@ def continue_execution(
     """
     if not dbgClient.is_debugging():
         raise Exception("not in debugging")
-    
+
     dbgClient.wait_cmd_ready()
     if not dbgClient.go():
         raise Exception(get_running_status())
-    
+
     dbgClient.wait_cmd_ready(timeout)
     return dump_current_state()
 
@@ -248,9 +243,9 @@ def step_into(
     """
     dbgClient.wait_cmd_ready()
     if not dbgClient.stepi(
-        step_count=step_count, 
-        pass_exceptions=pass_exceptions, 
-        swallow_exceptions=swallow_exceptions, 
+        step_count=step_count,
+        pass_exceptions=pass_exceptions,
+        swallow_exceptions=swallow_exceptions,
         wait_for_ready=wait_for_ready,
         wait_timeout=wait_timeout
     ):
@@ -270,9 +265,9 @@ def step_over(
     """
     dbgClient.wait_cmd_ready()
     if not dbgClient.stepo(
-        step_count=step_count, 
-        pass_exceptions=pass_exceptions, 
-        swallow_exceptions=swallow_exceptions, 
+        step_count=step_count,
+        pass_exceptions=pass_exceptions,
+        swallow_exceptions=swallow_exceptions,
         wait_for_ready=wait_for_ready,
         wait_timeout=wait_timeout
     ):
@@ -290,7 +285,7 @@ def skip(
     """
     dbgClient.wait_cmd_ready()
     if not dbgClient.skip(
-        skip_count=skip_count, 
+        skip_count=skip_count,
         wait_for_ready=wait_for_ready,
         wait_timeout=wait_timeout
     ):
@@ -307,7 +302,7 @@ def ret(
     """
     dbgClient.wait_cmd_ready()
     if not dbgClient.ret(
-        frames=frames, 
+        frames=frames,
         wait_timeout=wait_timeout
     ):
         raise Exception(get_running_status())
@@ -335,7 +330,7 @@ def read_memory(
     """
     if size > 8:
         raise ValueError("Too large")
-    
+
     dbgClient.wait_cmd_ready()
 
     return dbgClient.read_memory(int(address[2:], 16), size).hex()
@@ -371,7 +366,7 @@ def set_breakpoint(
     bp_type = StandardBreakpointType(bp_type)
     if bp_type is None:
         raise ValueError(f"Invalid breakpoint type: {bp_type}.")
-    
+
     # check address exsist
     if address_or_symbol.startswith("0x"):
         if not dbgClient.check_valid_read_ptr(int(address_or_symbol[2:], 16)):
@@ -383,8 +378,8 @@ def set_breakpoint(
             raise ValueError(f"can not locate symbol {address_or_symbol}")
 
     dbgClient.set_breakpoint(
-        address_or_symbol=int(address_or_symbol[2:], 16) if address_or_symbol.startswith("0x") else address_or_symbol, 
-        name=name, 
+        address_or_symbol=int(address_or_symbol[2:], 16) if address_or_symbol.startswith("0x") else address_or_symbol,
+        name=name,
         bp_type=bp_type
     )
     return "OK"
@@ -404,8 +399,8 @@ def set_hardware_breakpoint(
         raise ValueError(f"Invalid hardware breakpoint type: {bp_type}.")
 
     if not dbgClient.set_hardware_breakpoint(
-        address_or_symbol=int(address_or_symbol[2:], 16) if address_or_symbol.startswith("0x") else address_or_symbol, 
-        bp_type=bp_type, 
+        address_or_symbol=int(address_or_symbol[2:], 16) if address_or_symbol.startswith("0x") else address_or_symbol,
+        bp_type=bp_type,
         size=size
     ):
         raise Exception(get_running_status())
@@ -426,8 +421,8 @@ def set_memory_breakpoint(
         raise ValueError(f"Invalid memory breakpoint type: {bp_type}.")
 
     if not dbgClient.set_memory_breakpoint(
-        address_or_symbol=int(address_or_symbol[2:], 16) if address_or_symbol.startswith("0x") else address_or_symbol, 
-        bp_type=bp_type, 
+        address_or_symbol=int(address_or_symbol[2:], 16) if address_or_symbol.startswith("0x") else address_or_symbol,
+        bp_type=bp_type,
         singleshoot=singleshoot
     ):
         raise Exception(get_running_status())
@@ -526,7 +521,7 @@ def dump_memory_to_file(
     end_ea   = int(end_addr[2:]  , 16)
     if end_ea < start_ea:
         raise ValueError("end_addr is smaller than start_addr")
-    
+
     dbgClient.cmd_sync(f"savedata {os.getcwd()}\\{dump_filename},{hex(start_ea)},{hex(end_ea - start_ea)}")
     return "OK"
 
@@ -611,13 +606,29 @@ def fixup_tool_argument_descriptions(mcp: FastMCP):
             logger.debug(f"adding parameter documentation {tool.name}({name}='{description}')")
             tool.parameters["properties"][name]["description"] = description
 
-        
+
 def list_tool_annotations(mcp: FastMCP):
     for tool in mcp._tool_manager.list_tools():
         from pprint import pprint
         pprint(tool.parameters)
 
 def main():
+    parser = argparse.ArgumentParser(description="x64dbg mcp server")
+    parser.add_argument("--host", type=str, default="127.0.0.1", help="sse host address")
+    parser.add_argument("--port", type=int, default=8000, help="sse port")
+    parser.add_argument("x64dbg_dir", type=str, help="x64dbg installation directory")
+    args = parser.parse_args()
+    mcp.settings.host = args.host
+    mcp.settings.port = args.port
+    global x64dbg_exe
+    x64dbg_exe = os.path.join(args.x64dbg_dir, "x64", "x64dbg.exe")
+    if not os.path.exists(x64dbg_exe):
+        raise FileNotFoundError(x64dbg_exe)
+    global x32dbg_exe
+    x32dbg_exe = os.path.join(args.x64dbg_dir, "x32", "x32dbg.exe")
+    if not os.path.exists(x32dbg_exe):
+        raise FileNotFoundError(x32dbg_exe)
+    print(f"MCP Server availabile at http://{mcp.settings.host}:{mcp.settings.port}/sse")
     # https://github.com/modelcontextprotocol/python-sdk/issues/466
     fixup_tool_argument_descriptions(mcp)
     #list_tool_annotations(mcp)

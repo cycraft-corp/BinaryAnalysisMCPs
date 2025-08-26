@@ -589,7 +589,7 @@ wheels = [
 
 [[package]]
 name = "x64dbg-automate"
-version = "0.4.2"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "msgpack" },
@@ -597,15 +597,15 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyzmq" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/99/71/315a28ce0c19cc9fefaca35481100df63d4fe52faa465bebbef0252c2b64/x64dbg_automate-0.4.2.tar.gz", hash = "sha256:65e4168ef207fef9b3fd4bcb93e8c64d78b79788b86b9955eb781388d037ca21", size = 16941, upload-time = "2025-04-17T11:44:02.755Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/f8/3d17bd5bd5f79ea5b261ea8f2e963257614f976f1f2f785c3972b6fcab43/x64dbg_automate-0.5.0.tar.gz", hash = "sha256:d76516b13e2ff51fb56a6efb944c72e82ae634258bbb75e2ed0874bb7e5cba7a", size = 16922, upload-time = "2025-07-25T21:34:42.506Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c9/d5/e019e204d58c976455d09efe9ce3c7381448d572be90728ae962539ab69b/x64dbg_automate-0.4.2-py3-none-any.whl", hash = "sha256:e887e713bc3fc66eba103c08e8c14790398a6ec42fc241a582e76daf73bbd617", size = 18910, upload-time = "2025-04-17T11:44:01.416Z" },
+    { url = "https://files.pythonhosted.org/packages/ef/9b/af78e779271494e06601c56c835636f89284c001cfb4f985b137a5992d1e/x64dbg_automate-0.5.0-py3-none-any.whl", hash = "sha256:9f4fb266907a40b73fc4a00c59f13a84ad9aab3d49eb232636fe5c81df42146c", size = 18881, upload-time = "2025-07-25T21:34:41.206Z" },
 ]
 
 [[package]]
 name = "x64dbg-mcp"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },
     { name = "loguru" },
@@ -618,5 +618,5 @@ requires-dist = [
     { name = "fastmcp", specifier = ">=2.3.3" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "pefile", specifier = ">=2024.8.26" },
-    { name = "x64dbg-automate", specifier = "==0.4.2" },
+    { name = "x64dbg-automate", specifier = "==0.5.0" },
 ]
